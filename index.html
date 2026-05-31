@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>交易風控計算機</title>
+    <style>
+        /* 全域設定與深色主題 */
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e24;
+            --text-main: #ffffff;
+            --text-muted: #8b929e;
+            --primary-color: #2962ff;
+            --primary-hover: #1e4bd8;
+            --long-color: #0ecb81;
+            --short-color: #f6465d;
+            --border-color: #2b3139;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            padding: 15px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 480px; /* 手機版最大寬度 */
+            padding-bottom: 30px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-top: 10px;
+        }
+
+        .header h1 {
+            font-size: 22px;
+            font-weight: 600;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border-color);
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .input-group input {
+            width: 100%;
+            background-color: #2b3139;
+            border: 1px solid transparent;
+            color: var(--text-main);
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 16px; /* 防止 iOS 自動縮放 */
+            outline: none;
+            transition: border 0.2s;
+        }
+
+        .input-group input:focus {
+            border: 1px solid var(--primary-color);
+        }
+
+        .btn-calc {
+            width: 100%;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 5px;
+            transition: background 0.2s;
+        }
+
+        .btn-calc:active {
+            background-color: var(--primary-hover);
+        }
+
+        /* 結果區塊樣式 */
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .result-row:last-child {
+            border-bottom: none;
+        }
+
+        .result-label {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .result-value {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .highlight-margin {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--text-main);
+            text-align: center;
+            margin: 15px 0;
+        }
+
+        .margin-title {
+            text-align: center;
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-top: 10px;
+        }
+
+        .long { color: var(--long-color); }
+        .short { color: var(--short-color); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>交易風控計算機</h1>
+    </div>
+
+    <div class="card">
+        <div class="input-group">
+            <label>單筆想賠多少 (USDT)</label>
+            <input type="number" id="risk" value="5" step="any" inputmode="decimal">
+        </div>
+        
+        <div class="input-group">
+            <label>【進場】開倉價格</label>
+            <input type="number" id="openP" placeholder="例: 65000" step="any" inputmode="decimal">
+        </div>
+
+        <div class="input-group">
+            <label>【收錢】止盈價格 (TP)</label>
+            <input type="number" id="tpP" placeholder="例: 68000" step="any" inputmode="decimal">
+        </div>
+
+        <div class="input-group">
+            <label>【割肉】止損價格 (SL)</label>
+            <input type="number" id="slP" placeholder="例: 64000" step="any" inputmode="decimal">
+        </div>
+
+        <div class="input-group">
+            <label>【工具】槓桿倍數 (x)</label>
+            <input type="number" id="leverage" value="10" step="any" inputmode="decimal">
+        </div>
+
+        <button class="btn-calc" onclick="calculateTrade()">計算投入資金</button>
+    </div>
+
+    <div class="card" id="resultCard">
+        <div class="margin-title">你需要下單的保證金</div>
+        <div class="highlight-margin" id="resMargin">0.00 <span style="font-size:16px;">USDT</span></div>
+
+        <div class="result-row">
+            <span class="result-label">交易方向</span>
+            <span class="result-value" id="resDir">-</span>
+        </div>
+        <div class="result-row">
+            <span class="result-label">合約數量</span>
+            <span class="result-value" id="resSize">0.0000 單位</span>
+        </div>
+        <div class="result-row">
+            <span class="result-label">此單盈虧比</span>
+            <span class="result-value" id="resRR">1 : 0.00</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    function calculateTrade() {
+        // 1. 獲取使用者輸入
+        const risk = parseFloat(document.getElementById('risk').value);
+        const openP = parseFloat(document.getElementById('openP').value);
+        const tpP = parseFloat(document.getElementById('tpP').value);
+        const slP = parseFloat(document.getElementById('slP').value);
+        const leverage = parseFloat(document.getElementById('leverage').value);
+
+        // 檢查是否漏填
+        if (isNaN(risk) || isNaN(openP) || isNaN(tpP) || isNaN(slP) || isNaN(leverage)) {
+            alert("請完整輸入正確的數字格式！");
+            return;
+        }
+
+        // 2. 計算關鍵數值
+        const priceDistance = Math.abs(openP - slP);
+        
+        if (priceDistance === 0) {
+            alert("錯誤：開倉價與止損價不能相同！");
+            return;
+        }
+
+        // 3. 公式邏輯
+        const contractSize = risk / priceDistance;
+        const notionalValue = contractSize * openP;
+        const marginRequired = notionalValue / leverage;
+
+        // 4. 計算盈虧比
+        const tpDistance = Math.abs(tpP - openP);
+        const rrRatio = tpDistance / priceDistance;
+
+        // 5. 顯示結果更新 DOM
+        document.getElementById('resMargin').innerHTML = `${marginRequired.toFixed(2)} <span style="font-size:16px;">USDT</span>`;
+        document.getElementById('resSize').innerText = `${contractSize.toFixed(4)} 單位`;
+        document.getElementById('resRR').innerText = `1 : ${rrRatio.toFixed(2)}`;
+
+        // 判斷多空方向並給予對應顏色
+        const dirEl = document.getElementById('resDir');
+        if (tpP > openP) {
+            dirEl.innerText = "做多 (Long)";
+            dirEl.className = "result-value long";
+        } else if (tpP < openP) {
+            dirEl.innerText = "做空 (Short)";
+            dirEl.className = "result-value short";
+        } else {
+            dirEl.innerText = "方向不明";
+            dirEl.className = "result-value";
+        }
+    }
+</script>
+
+</body>
+</html>
