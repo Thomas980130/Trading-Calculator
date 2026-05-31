@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>交易風控計算機</title>
+    
+    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="icon" type="image/png" href="icon.png">
+
     <style>
         /* 全域設定與深色主題 */
         :root {
@@ -43,6 +47,16 @@
             text-align: center;
             margin-bottom: 20px;
             padding-top: 10px;
+        }
+
+        /* 網頁內部顯示的圓角 LOGO 樣式 */
+        .app-logo {
+            width: 75px;
+            height: 75px;
+            border-radius: 18px; /* 這裡控制圓角的弧度，數字越大越圓 */
+            margin: 0 auto 12px auto;
+            display: block;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4); /* 增加立體陰影 */
         }
 
         .header h1 {
@@ -149,6 +163,7 @@
 
 <div class="container">
     <div class="header">
+        <img src="icon.png" alt="App Logo" class="app-logo">
         <h1>交易風控計算機</h1>
     </div>
 
